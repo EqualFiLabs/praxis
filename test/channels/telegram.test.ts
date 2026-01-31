@@ -19,6 +19,7 @@ describe("normalizeTelegramInbound", () => {
     expect(result?.channelId).toBe("telegram");
     expect(result?.userId).toBe("alice");
     expect(result?.content).toBe("hi");
+    expect(result?.sessionKey).toContain("telegram");
   });
 });
 

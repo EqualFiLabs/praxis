@@ -2,6 +2,8 @@ export type ChannelId = "telegram" | "discord" | "whatsapp" | string;
 
 export type ChannelMetadata = Record<string, unknown>;
 
+export type ChatType = "dm" | "group" | "thread";
+
 export interface InboundMessage {
   channelId: ChannelId;
   userId: string;
@@ -9,6 +11,12 @@ export interface InboundMessage {
   timestamp: string;
   content: string;
   metadata?: ChannelMetadata;
+}
+
+export interface MsgContext extends InboundMessage {
+  chatType: ChatType;
+  sessionKey: string;
+  raw?: unknown;
 }
 
 export interface OutboundMessage {
@@ -34,7 +42,7 @@ export interface ChannelEvent {
   details?: ChannelMetadata;
 }
 
-export type InboundMessageHandler = (message: InboundMessage) => void | Promise<void>;
+export type InboundMessageHandler = (message: MsgContext) => void | Promise<void>;
 
 export interface ChannelClient {
   id: ChannelId;

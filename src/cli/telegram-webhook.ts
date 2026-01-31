@@ -1,14 +1,14 @@
 import { createServer } from "node:http";
 import type { IncomingMessage } from "node:http";
 import type { ChannelsConfig } from "../types/config";
-import type { InboundMessage } from "../channels/types";
+import type { MsgContext } from "../channels/types";
 import { verifySecretToken, ackResponse } from "../channels/webhooks";
 import { extractTelegramInbound, normalizeTelegramInbound, TelegramUpdate } from "../channels/telegram";
 import { resolveSecretFromEnv } from "../utils/secrets";
 
 export type TelegramWebhookOptions = {
   config: ChannelsConfig["telegram"];
-  onMessage: (message: InboundMessage) => void | Promise<void>;
+  onMessage: (message: MsgContext) => void | Promise<void>;
   port?: number;
   path?: string;
 };

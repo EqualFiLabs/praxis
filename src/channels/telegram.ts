@@ -1,7 +1,7 @@
 import type { ChannelsConfig } from "../types/config";
-import type { ChannelClient, InboundMessage, InboundMessageHandler, OutboundMessage } from "./types";
+import type { ChannelClient, InboundMessage, InboundMessageHandler, MsgContext, OutboundMessage } from "./types";
 import { resolveSecretFromEnv } from "../utils/secrets";
-import { buildSessionKey, isAllowedSender } from "./session-key";
+import { applyInboundPolicy } from "./dock";
 
 export type TelegramInbound = {
   senderId: string;
@@ -59,27 +59,22 @@ export function extractTelegramInbound(update: TelegramUpdate): TelegramInbound 
 export function normalizeTelegramInbound(
   cfg: ChannelsConfig["telegram"],
   inbound: TelegramInbound
-): InboundMessage | null {
+): MsgContext | null {
   if (!cfg?.enabled) return null;
-  if (!isAllowedSender(cfg.allowFrom, inbound.senderId)) return null;
-  const sessionKey = buildSessionKey({
-    channel: "telegram",
-    senderId: inbound.senderId,
-    groupId: inbound.isGroup ? inbound.chatId : undefined,
-    threadId: inbound.threadId
-  });
-  return {
+  const message: InboundMessage = {
     channelId: "telegram",
     userId: inbound.senderId,
     threadId: inbound.threadId,
     timestamp: inbound.timestamp ?? new Date().toISOString(),
     content: inbound.text,
     metadata: {
-      sessionKey,
       chatId: inbound.chatId,
       isGroup: inbound.isGroup ?? false
     }
   };
+  return applyInboundPolicy("telegram", message, {
+    allowFrom: cfg.allowFrom
+  });
 }
 
 export function buildTelegramSendPayload(message: OutboundMessage): TelegramSendPayload {

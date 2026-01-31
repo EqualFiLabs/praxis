@@ -1,4 +1,4 @@
-import type { ChannelId, InboundMessage, OutboundMessage } from "../types";
+import type { ChannelId, MsgContext, OutboundMessage } from "../types";
 
 export type OutboundDelivery = {
   channelId: ChannelId;
@@ -13,14 +13,14 @@ export type ChannelOutboundAdapter = {
 };
 
 export type ChannelMentionAdapter = {
-  stripPatterns?: (message: InboundMessage) => string[];
+  stripPatterns?: (message: MsgContext) => string[];
   requireMentionByDefault?: boolean;
 };
 
 export type ChannelActionAdapter = {
   id: ChannelId;
   listActions?: () => string[];
-  handleAction?: (action: string, message: InboundMessage) => Promise<void>;
+  handleAction?: (action: string, message: MsgContext) => Promise<void>;
 };
 
 export type ChannelPlugin = {

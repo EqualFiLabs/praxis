@@ -1,5 +1,6 @@
 import type { ChannelsConfig } from "../types/config";
-import { buildSessionKey, isAllowedSender } from "./session-key";
+import type { InboundMessage, MsgContext } from "./types";
+import { applyInboundPolicy } from "./dock";
 
 export type DiscordInbound = {
   senderId: string;
@@ -9,31 +10,23 @@ export type DiscordInbound = {
   isGroup?: boolean;
 };
 
-export type ChannelMessage = {
-  channel: "discord";
-  to: string;
-  text: string;
-  threadId?: string;
-  sessionKey: string;
-};
-
 export function normalizeDiscordInbound(
   cfg: ChannelsConfig["discord"],
   inbound: DiscordInbound
-): ChannelMessage | null {
+): MsgContext | null {
   if (!cfg?.enabled) return null;
-  if (!isAllowedSender(cfg.allowFrom, inbound.senderId)) return null;
-  const sessionKey = buildSessionKey({
-    channel: "discord",
-    senderId: inbound.senderId,
-    groupId: inbound.isGroup ? inbound.channelId : undefined,
-    threadId: inbound.threadId
-  });
-  return {
-    channel: "discord",
-    to: inbound.channelId,
-    text: inbound.text,
+  const message: InboundMessage = {
+    channelId: "discord",
+    userId: inbound.senderId,
     threadId: inbound.threadId,
-    sessionKey
+    timestamp: new Date().toISOString(),
+    content: inbound.text,
+    metadata: {
+      channelId: inbound.channelId,
+      isGroup: inbound.isGroup ?? false
+    }
   };
+  return applyInboundPolicy("discord", message, {
+    allowFrom: cfg.allowFrom
+  });
 }

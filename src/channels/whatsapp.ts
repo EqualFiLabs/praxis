@@ -1,5 +1,6 @@
 import type { ChannelsConfig } from "../types/config";
-import { buildSessionKey, isAllowedSender } from "./session-key";
+import type { InboundMessage, MsgContext } from "./types";
+import { applyInboundPolicy } from "./dock";
 
 export type WhatsappInbound = {
   senderId: string;
@@ -9,31 +10,23 @@ export type WhatsappInbound = {
   isGroup?: boolean;
 };
 
-export type ChannelMessage = {
-  channel: "whatsapp";
-  to: string;
-  text: string;
-  threadId?: string;
-  sessionKey: string;
-};
-
 export function normalizeWhatsappInbound(
   cfg: ChannelsConfig["whatsapp"],
   inbound: WhatsappInbound
-): ChannelMessage | null {
+): MsgContext | null {
   if (!cfg?.enabled) return null;
-  if (!isAllowedSender(cfg.allowFrom, inbound.senderId)) return null;
-  const sessionKey = buildSessionKey({
-    channel: "whatsapp",
-    senderId: inbound.senderId,
-    groupId: inbound.isGroup ? inbound.chatId : undefined,
-    threadId: inbound.threadId
-  });
-  return {
-    channel: "whatsapp",
-    to: inbound.chatId,
-    text: inbound.text,
+  const message: InboundMessage = {
+    channelId: "whatsapp",
+    userId: inbound.senderId,
     threadId: inbound.threadId,
-    sessionKey
+    timestamp: new Date().toISOString(),
+    content: inbound.text,
+    metadata: {
+      chatId: inbound.chatId,
+      isGroup: inbound.isGroup ?? false
+    }
   };
+  return applyInboundPolicy("whatsapp", message, {
+    allowFrom: cfg.allowFrom
+  });
 }

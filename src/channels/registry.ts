@@ -4,6 +4,7 @@ import type {
   InboundMessageHandler,
   OutboundMessage,
 } from "./types";
+import { CHANNEL_DOCKS } from "./dock";
 import type { ChannelCapabilities } from "./dock";
 
 export type ChannelMeta = {
@@ -18,19 +19,19 @@ export const CHANNEL_METADATA: Record<string, ChannelMeta> = {
     id: "telegram",
     label: "Telegram",
     docsPath: "/channels/telegram",
-    capabilities: { chatTypes: ["dm", "group", "thread"], threads: true, textChunkLimit: 4000 }
+    capabilities: CHANNEL_DOCKS.telegram.capabilities
   },
   discord: {
     id: "discord",
     label: "Discord",
     docsPath: "/channels/discord",
-    capabilities: { chatTypes: ["dm", "group", "thread"], threads: true, textChunkLimit: 2000 }
+    capabilities: CHANNEL_DOCKS.discord.capabilities
   },
   whatsapp: {
     id: "whatsapp",
     label: "WhatsApp",
     docsPath: "/channels/whatsapp",
-    capabilities: { chatTypes: ["dm", "group"], polls: true, reactions: true, media: true, textChunkLimit: 4000 }
+    capabilities: CHANNEL_DOCKS.whatsapp.capabilities
   }
 };
 

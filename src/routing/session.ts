@@ -1,6 +1,4 @@
-import type { InboundMessage } from "../channels/types";
-
-export type ChatType = "dm" | "group" | "thread";
+import type { ChatType, InboundMessage } from "../channels/types";
 
 export type SessionRoute = {
   channelId: string;
