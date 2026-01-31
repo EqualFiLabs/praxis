@@ -1,4 +1,9 @@
-# praxis
+<img
+src="./praxis.png"
+alt="diagram"
+style="display:block;margin:0 auto;width:450px;">
+
+# Praxis
 
 Local-first Position Agent runtime for Equalis. This tool runs on your machine, uses Ollama by default for inference, stores memory locally, and calls your Position NFT TBA through ERC-6551 + ERC-6900.
 
