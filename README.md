@@ -300,6 +300,32 @@ node ./dist/cli/channel-status.js --agent AGENT_ID
 
 This reports missing tokens or disabled channels.
 
+## 7.2) Channel runners (webhooks / gateway)
+
+Each runner supports `--help` for flags and defaults.
+
+Telegram webhook runner:
+```bash
+node ./dist/cli/telegram-webhook-runner.js --agent AGENT_ID --port 8080 --path /telegram/webhook
+```
+
+Discord gateway runner:
+```bash
+node ./dist/cli/discord-gateway.js --agent AGENT_ID
+```
+
+WhatsApp webhook runner (Cloud API):
+```bash
+node ./dist/cli/whatsapp-webhook.js --agent AGENT_ID --port 8082 --path /whatsapp/webhook
+```
+
+TypeScript (dev) equivalents:
+```bash
+node --loader ts-node/esm src/cli/telegram-webhook-runner.ts --agent AGENT_ID
+node --loader ts-node/esm src/cli/discord-gateway.ts --agent AGENT_ID
+node --loader ts-node/esm src/cli/whatsapp-webhook.ts --agent AGENT_ID
+```
+
 ## 8) Where data is stored
 
 ```

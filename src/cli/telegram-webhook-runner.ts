@@ -1,3 +1,6 @@
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
 import { loadConfig } from "../config/loader";
 import { normalizeConfig } from "../config/normalized";
 import { createAgentLoop } from "../agent/loop";
@@ -17,9 +20,13 @@ type WebhookArgs = {
 
 function parseArgs(argv: string[]): WebhookArgs {
   const args = argv.slice(2);
+  if (args.includes("--help") || args.includes("-h")) {
+    printUsage();
+    process.exit(0);
+  }
   const agentIndex = args.indexOf("--agent");
   if (agentIndex === -1) {
-    throw new Error("Usage: praxis-telegram-webhook --agent <id> [--port 8080] [--path /telegram/webhook]");
+    throw new Error(usage());
   }
   const agentId = args[agentIndex + 1];
   if (!agentId) {
@@ -35,6 +42,14 @@ function parseArgs(argv: string[]): WebhookArgs {
 function redactSecrets(text: string): string {
   const envPattern = /(OPENAI|ANTHROPIC|GOOGLE|OLLAMA|PRIVATE)_?API?_?KEY/gi;
   return text.replace(envPattern, "REDACTED");
+}
+
+function usage(): string {
+  return "Usage: praxis-telegram-webhook --agent <id> [--port 8080] [--path /telegram/webhook]";
+}
+
+function printUsage(): void {
+  process.stdout.write(`${usage()}\n`);
 }
 
 async function main() {
@@ -93,7 +108,10 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  process.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}\n`);
-  process.exit(1);
-});
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectRun) {
+  main().catch((err) => {
+    process.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}\n`);
+    process.exit(1);
+  });
+}
