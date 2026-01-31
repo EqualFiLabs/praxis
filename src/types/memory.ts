@@ -30,3 +30,13 @@ export type Decision = {
   outcome?: string;
   txHash?: string;
 };
+
+export type MemorySearchResult = {
+  line: number;
+  text: string;
+};
+
+export type WeeklyContext = {
+  date: string;
+  raw: string;
+};
