@@ -171,6 +171,7 @@ export type AgentConfig = {
     tbaAddress: string;
     positionNftAddress: string;
     positionTokenId: string;
+    genericExecModule?: string;
   };
   channels?: ChannelsConfig;
 };
@@ -395,7 +396,8 @@ export const AgentConfigSchema = z.object({
     chainId: z.number().int().positive(),
     tbaAddress: z.string().min(1),
     positionNftAddress: z.string().min(1),
-    positionTokenId: z.string().min(1)
+    positionTokenId: z.string().min(1),
+    genericExecModule: z.string().min(1).optional()
   }),
   channels: ChannelsConfigSchema
 });

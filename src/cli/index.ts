@@ -4,8 +4,10 @@ import { createAgentLoop } from "../agent/loop";
 import { loadMemory, saveMemory, appendDecision } from "../memory/store";
 import { loadConstraints } from "../constraints/checker";
 import { selectProviderWithProbe } from "../inference/manager";
+import { planWithInference } from "../planning/plan";
 import { append as appendTranscript } from "../session/transcript";
 import { createTelemetryLogger } from "../telemetry/logger";
+import { createChainRuntime } from "../chain/runtime";
 
 function parseArgs(argv: string[]): { agentId: string; input: string } {
   const args = argv.slice(2);
@@ -32,6 +34,7 @@ async function main() {
   const config = normalizeConfig(await loadConfig(agentId));
   // Startup validation: probe inference providers and fail fast.
   await selectProviderWithProbe({ inference: config.inference, providers: config.providers });
+  const chainRuntime = createChainRuntime({ config });
 
   const loop = createAgentLoop({
     agentId,
@@ -39,13 +42,17 @@ async function main() {
     loadMemory,
     saveMemory,
     loadConstraints,
-    inferPlan: async (_context, _input) => {
-      // Placeholder: simple no-op plan
-      return { actions: [], reasoning: "" };
+    inferPlan: async (context, agentInput) => {
+      const result = await planWithInference({
+        context,
+        input: agentInput,
+        inference: { inference: config.inference, providers: config.providers }
+      });
+      return result.plan;
     },
-    allowedSelectors: async () => [],
-    hasGenericExec: async () => false,
-    executeAction: async () => ({ error: "execution not configured" }),
+    allowedSelectors: chainRuntime.allowedSelectors,
+    hasGenericExec: chainRuntime.hasGenericExec,
+    executeAction: chainRuntime.executeAction,
     appendTranscript: async (entry) => {
       await appendTranscript(agentId, "main", {
         ...entry,
