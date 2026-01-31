@@ -7,6 +7,7 @@ import { checkPlan, type ConstraintResult } from "../constraints/checker";
 import { requireSelectorAllowed, requireGenericExecForExternalTarget } from "../chain/selector-validation";
 import type { ActionPolicy, PolicyContext } from "../policies/actions";
 import { evaluatePolicy } from "../policies/actions";
+import type { TelemetryLogger } from "../telemetry/events";
 
 export type AgentInput = {
   type: "prompt" | "trigger";
@@ -69,6 +70,7 @@ export type AgentLoopDeps = {
     txHash?: string;
   }) => Promise<void>;
   getActionPolicy?: () => ActionPolicy | undefined;
+  telemetry?: TelemetryLogger;
 };
 
 export type AgentLoop = {
@@ -76,8 +78,8 @@ export type AgentLoop = {
   assembleContext: () => Promise<AgentContext>;
   plan: (context: AgentContext, input: AgentInput) => Promise<ActionPlan>;
   validate: (plan: ActionPlan, input: AgentInput) => Promise<ValidationResult>;
-  execute: (plan: ActionPlan) => Promise<ExecutionResult>;
-  persist: (result: ExecutionResult, plan: ActionPlan) => Promise<void>;
+  execute: (plan: ActionPlan, input: AgentInput) => Promise<ExecutionResult>;
+  persist: (result: ExecutionResult, plan: ActionPlan, input: AgentInput) => Promise<void>;
   report: (result: ExecutionResult) => AgentReport;
 };
 
@@ -93,7 +95,16 @@ export function createAgentLoop(deps: AgentLoopDeps): AgentLoop {
   };
 
   const plan = async (context: AgentContext, input: AgentInput): Promise<ActionPlan> => {
-    return deps.inferPlan(context, input);
+    const actionPlan = await deps.inferPlan(context, input);
+    await deps.telemetry?.log({
+      type: "plan",
+      timestamp: new Date().toISOString(),
+      agentId: deps.agentId,
+      sessionId: input.sessionId,
+      channelId: input.channelId,
+      metadata: { actions: actionPlan.actions.length }
+    });
+    return actionPlan;
   };
 
   const validate = async (actionPlan: ActionPlan, input: AgentInput): Promise<ValidationResult> => {
@@ -139,15 +150,24 @@ export function createAgentLoop(deps: AgentLoopDeps): AgentLoop {
       }
     }
 
-    return {
+    const result = {
       valid: errors.length === 0,
       errors,
       warnings,
       constraintResults
     };
+    await deps.telemetry?.log({
+      type: "validate",
+      timestamp: new Date().toISOString(),
+      agentId: deps.agentId,
+      sessionId: input.sessionId,
+      channelId: input.channelId,
+      metadata: { valid: result.valid, errors: result.errors.length }
+    });
+    return result;
   };
 
-  const execute = async (actionPlan: ActionPlan): Promise<ExecutionResult> => {
+  const execute = async (actionPlan: ActionPlan, input: AgentInput): Promise<ExecutionResult> => {
     const executed: ExecutedAction[] = [];
     let success = true;
 
@@ -163,16 +183,37 @@ export function createAgentLoop(deps: AgentLoopDeps): AgentLoop {
       });
     }
 
-    return { success, actions: executed, error: success ? undefined : "execution failed" };
+    const result = { success, actions: executed, error: success ? undefined : "execution failed" };
+    await deps.telemetry?.log({
+      type: "execute",
+      timestamp: new Date().toISOString(),
+      agentId: deps.agentId,
+      sessionId: input.sessionId,
+      channelId: input.channelId,
+      metadata: { success: result.success, actions: result.actions.length }
+    });
+    return result;
   };
 
-  const persist = async (result: ExecutionResult, plan: ActionPlan): Promise<void> => {
+  const persist = async (
+    result: ExecutionResult,
+    plan: ActionPlan,
+    input: AgentInput
+  ): Promise<void> => {
     const timestamp = Date.now();
     if (!result.success) {
       await deps.appendTranscript({
         type: "error",
         text: result.error ?? "execution failed",
         timestamp
+      });
+      await deps.telemetry?.log({
+        type: "persist",
+        timestamp: new Date().toISOString(),
+        agentId: deps.agentId,
+        sessionId: input.sessionId,
+        channelId: input.channelId,
+        metadata: { success: false }
       });
       return;
     }
@@ -200,6 +241,14 @@ export function createAgentLoop(deps: AgentLoopDeps): AgentLoop {
 
     const memory = await deps.loadMemory(deps.agentId);
     await deps.saveMemory(deps.agentId, memory);
+    await deps.telemetry?.log({
+      type: "persist",
+      timestamp: new Date().toISOString(),
+      agentId: deps.agentId,
+      sessionId: input.sessionId,
+      channelId: input.channelId,
+      metadata: { success: true }
+    });
   };
 
   const report = (result: ExecutionResult): AgentReport => {
@@ -219,8 +268,8 @@ export function createAgentLoop(deps: AgentLoopDeps): AgentLoop {
       });
       return { summary: "Validation failed", success: false, actions: [] };
     }
-    const execution = await execute(actionPlan);
-    await persist(execution, actionPlan);
+    const execution = await execute(actionPlan, input);
+    await persist(execution, actionPlan, input);
     return report(execution);
   };
 

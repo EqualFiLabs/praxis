@@ -5,6 +5,7 @@ import { loadMemory, saveMemory, appendDecision } from "../memory/store";
 import { loadConstraints } from "../constraints/checker";
 import { selectProviderWithProbe } from "../inference/manager";
 import { append as appendTranscript } from "../session/transcript";
+import { createTelemetryLogger } from "../telemetry/logger";
 
 function parseArgs(argv: string[]): { agentId: string; input: string } {
   const args = argv.slice(2);
@@ -53,7 +54,8 @@ async function main() {
     },
     appendDecision: async (decision) => {
       await appendDecision(agentId, decision);
-    }
+    },
+    telemetry: createTelemetryLogger(agentId)
   });
 
   const report = await loop.intake({ type: "prompt", text: input });
