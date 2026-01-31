@@ -5,6 +5,7 @@ export type PlannedAction = {
   target: string;
   calldata: string;
   description: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type ActionPlan = {
@@ -24,7 +25,8 @@ export const PlannedActionSchema = z.object({
   selector: z.string().regex(/^0x[0-9a-fA-F]{8}$/),
   target: z.string().min(1),
   calldata: z.string().min(1),
-  description: z.string().min(1)
+  description: z.string().min(1),
+  metadata: z.record(z.unknown()).optional()
 });
 
 export const ActionPlanSchema = z.object({
