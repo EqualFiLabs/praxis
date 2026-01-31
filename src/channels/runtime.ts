@@ -59,25 +59,54 @@ export class ChannelRuntimeManager {
 
   async routeInbound(message: MsgContext): Promise<void> {
     const sessionId = message.sessionKey || resolveSessionKey(message);
-    await this.agentLoop.intake({
-      type: "prompt",
-      text: message.content,
-      sessionId
+    this.emitEvent("message", message.channelId, {
+      direction: "inbound",
+      sessionKey: sessionId,
+      metadata: message.metadata
     });
+    try {
+      await this.agentLoop.intake({
+        type: "prompt",
+        text: message.content,
+        sessionId
+      });
+    } catch (error) {
+      this.emitEvent("error", message.channelId, {
+        direction: "inbound",
+        sessionKey: sessionId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }
 
   async routeOutbound(message: OutboundMessage, origin?: MsgContext): Promise<void> {
     const outbound = this.applyOrigin(message, origin);
     const plugin = this.plugins[String(outbound.channelId)];
-    if (plugin?.outbound?.sendPayload) {
-      await plugin.outbound.sendPayload(outbound);
-      return;
+    const sessionKey = origin?.sessionKey;
+    this.emitEvent("message", outbound.channelId, {
+      direction: "outbound",
+      sessionKey,
+      metadata: outbound.metadata
+    });
+    try {
+      if (plugin?.outbound?.sendPayload) {
+        await plugin.outbound.sendPayload(outbound);
+        return;
+      }
+      if (plugin?.outbound?.buildPayload) {
+        const payload = plugin.outbound.buildPayload(outbound);
+        outbound.metadata = { ...outbound.metadata, outboundPayload: payload };
+      }
+      await this.registry.send(outbound);
+    } catch (error) {
+      this.emitEvent("error", outbound.channelId, {
+        direction: "outbound",
+        sessionKey,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
     }
-    if (plugin?.outbound?.buildPayload) {
-      const payload = plugin.outbound.buildPayload(outbound);
-      outbound.metadata = { ...outbound.metadata, outboundPayload: payload };
-    }
-    await this.registry.send(outbound);
   }
 
   private applyOrigin(message: OutboundMessage, origin?: MsgContext): OutboundMessage {
@@ -92,12 +121,22 @@ export class ChannelRuntimeManager {
     };
   }
 
-  private emitEvent(type: ChannelEvent["type"], channelId: ChannelId): void {
+  private emitEvent(
+    type: ChannelEvent["type"],
+    channelId: ChannelId,
+    details?: ChannelEvent["details"] & {
+      direction?: "inbound" | "outbound";
+      sessionKey?: string;
+      error?: string;
+      metadata?: Record<string, unknown>;
+    }
+  ): void {
     if (!this.onEvent) return;
     this.onEvent({
       type,
       channelId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      details
     });
   }
 }

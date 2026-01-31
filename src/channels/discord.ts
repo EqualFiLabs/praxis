@@ -51,7 +51,11 @@ export function normalizeDiscordInbound(
     }
   };
   return applyInboundPolicy("discord", message, {
-    allowFrom: cfg.allowFrom
+    allowFrom: cfg.allowFrom,
+    mentionPolicy: {
+      requireInGroups: cfg.requireMentionInGroups,
+      patterns: cfg.mentionPatterns
+    }
   });
 }
 

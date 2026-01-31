@@ -73,7 +73,11 @@ export function normalizeTelegramInbound(
     }
   };
   return applyInboundPolicy("telegram", message, {
-    allowFrom: cfg.allowFrom
+    allowFrom: cfg.allowFrom,
+    mentionPolicy: {
+      requireInGroups: cfg.requireMentionInGroups,
+      patterns: cfg.mentionPatterns
+    }
   });
 }
 

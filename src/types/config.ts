@@ -39,6 +39,12 @@ export type ChannelsConfig = {
     polling?: boolean;
     apiBaseUrl?: string;
     allowFrom?: string[];
+    requireMentionInGroups?: boolean;
+    mentionPatterns?: string[];
+    actions?: {
+      allow?: string[];
+      deny?: string[];
+    };
     accounts?: Record<
       string,
       {
@@ -48,6 +54,8 @@ export type ChannelsConfig = {
         polling?: boolean;
         apiBaseUrl?: string;
         allowFrom?: string[];
+        requireMentionInGroups?: boolean;
+        mentionPatterns?: string[];
       }
     >;
     defaultAccountId?: string;
@@ -58,6 +66,12 @@ export type ChannelsConfig = {
     provider?: "cloud" | "web";
     apiBaseUrl?: string;
     allowFrom?: string[];
+    requireMentionInGroups?: boolean;
+    mentionPatterns?: string[];
+    actions?: {
+      allow?: string[];
+      deny?: string[];
+    };
     accounts?: Record<
       string,
       {
@@ -66,6 +80,8 @@ export type ChannelsConfig = {
         provider?: "cloud" | "web";
         apiBaseUrl?: string;
         allowFrom?: string[];
+        requireMentionInGroups?: boolean;
+        mentionPatterns?: string[];
       }
     >;
     defaultAccountId?: string;
@@ -77,6 +93,12 @@ export type ChannelsConfig = {
     publicKeyEnv?: string;
     apiBaseUrl?: string;
     allowFrom?: string[];
+    requireMentionInGroups?: boolean;
+    mentionPatterns?: string[];
+    actions?: {
+      allow?: string[];
+      deny?: string[];
+    };
     accounts?: Record<
       string,
       {
@@ -86,6 +108,8 @@ export type ChannelsConfig = {
         publicKeyEnv?: string;
         apiBaseUrl?: string;
         allowFrom?: string[];
+        requireMentionInGroups?: boolean;
+        mentionPatterns?: string[];
       }
     >;
     defaultAccountId?: string;
@@ -156,6 +180,14 @@ export const ChannelsConfigSchema = z
         polling: z.boolean().optional(),
         apiBaseUrl: z.string().min(1).optional(),
         allowFrom: z.array(z.string()).optional(),
+        requireMentionInGroups: z.boolean().optional(),
+        mentionPatterns: z.array(z.string()).optional(),
+        actions: z
+          .object({
+            allow: z.array(z.string()).optional(),
+            deny: z.array(z.string()).optional()
+          })
+          .optional(),
         accounts: z
           .record(
             z.object({
@@ -164,7 +196,9 @@ export const ChannelsConfigSchema = z
               webhookUrl: z.string().min(1).optional(),
               polling: z.boolean().optional(),
               apiBaseUrl: z.string().min(1).optional(),
-              allowFrom: z.array(z.string()).optional()
+              allowFrom: z.array(z.string()).optional(),
+              requireMentionInGroups: z.boolean().optional(),
+              mentionPatterns: z.array(z.string()).optional()
             })
           )
           .optional(),
@@ -178,6 +212,14 @@ export const ChannelsConfigSchema = z
         provider: z.enum(["cloud", "web"]).optional(),
         apiBaseUrl: z.string().min(1).optional(),
         allowFrom: z.array(z.string()).optional(),
+        requireMentionInGroups: z.boolean().optional(),
+        mentionPatterns: z.array(z.string()).optional(),
+        actions: z
+          .object({
+            allow: z.array(z.string()).optional(),
+            deny: z.array(z.string()).optional()
+          })
+          .optional(),
         accounts: z
           .record(
             z.object({
@@ -185,7 +227,9 @@ export const ChannelsConfigSchema = z
               sessionDir: z.string().min(1),
               provider: z.enum(["cloud", "web"]).optional(),
               apiBaseUrl: z.string().min(1).optional(),
-              allowFrom: z.array(z.string()).optional()
+              allowFrom: z.array(z.string()).optional(),
+              requireMentionInGroups: z.boolean().optional(),
+              mentionPatterns: z.array(z.string()).optional()
             })
           )
           .optional(),
@@ -200,6 +244,14 @@ export const ChannelsConfigSchema = z
         publicKeyEnv: z.string().min(1).optional(),
         apiBaseUrl: z.string().min(1).optional(),
         allowFrom: z.array(z.string()).optional(),
+        requireMentionInGroups: z.boolean().optional(),
+        mentionPatterns: z.array(z.string()).optional(),
+        actions: z
+          .object({
+            allow: z.array(z.string()).optional(),
+            deny: z.array(z.string()).optional()
+          })
+          .optional(),
         accounts: z
           .record(
             z.object({
@@ -208,7 +260,9 @@ export const ChannelsConfigSchema = z
               appId: z.string().min(1).optional(),
               publicKeyEnv: z.string().min(1).optional(),
               apiBaseUrl: z.string().min(1).optional(),
-              allowFrom: z.array(z.string()).optional()
+              allowFrom: z.array(z.string()).optional(),
+              requireMentionInGroups: z.boolean().optional(),
+              mentionPatterns: z.array(z.string()).optional()
             })
           )
           .optional(),

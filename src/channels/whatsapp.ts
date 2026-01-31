@@ -36,7 +36,11 @@ export function normalizeWhatsappInbound(
     }
   };
   return applyInboundPolicy("whatsapp", message, {
-    allowFrom: cfg.allowFrom
+    allowFrom: cfg.allowFrom,
+    mentionPolicy: {
+      requireInGroups: cfg.requireMentionInGroups,
+      patterns: cfg.mentionPatterns
+    }
   });
 }
 

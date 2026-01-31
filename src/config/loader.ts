@@ -14,7 +14,8 @@ export function getAgentBasePath(agentId: string): string {
   if (!trimmed) {
     throw new Error("agentId is required");
   }
-  return path.join(os.homedir(), ".equalis", "agents", trimmed);
+  const home = process.env.EQUALIS_HOME ?? os.homedir();
+  return path.join(home, ".equalis", "agents", trimmed);
 }
 
 async function readConfigFile(filePath: string): Promise<unknown> {
