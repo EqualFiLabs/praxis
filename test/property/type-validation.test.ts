@@ -44,7 +44,11 @@ const sessionRecordArb = fc.record({
 
 const sessionsFileArb = fc.dictionary(fc.string({ minLength: 1 }), sessionRecordArb);
 
-const validSelectorArb = fc.hexaString({ minLength: 8, maxLength: 8 }).map((hex) => `0x${hex}`);
+const hexCharArb = fc.constantFrom(..."0123456789abcdef".split(""));
+const validSelectorArb = fc
+  .array(hexCharArb, { minLength: 8, maxLength: 8 })
+  .map((chars) => chars.join(""))
+  .map((hex) => `0x${hex}`);
 const invalidSelectorArb = fc
   .string({ minLength: 1 })
   .filter((value) => !/^0x[0-9a-fA-F]{8}$/.test(value));
