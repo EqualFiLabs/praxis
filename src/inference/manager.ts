@@ -1,5 +1,7 @@
 import type { InferenceConfig, ProviderConfig } from "../types/config";
 import { filterSensitiveMemory } from "../memory/store";
+import type { TaggedContent } from "../safety/content";
+import { sanitizeTaggedContent } from "../safety/content";
 
 export type ProviderId = "ollama" | "external";
 
@@ -120,4 +122,23 @@ export function filterMemoryForInference(
   allowSensitiveMemory: boolean
 ): string {
   return filterSensitiveMemory(raw, allowSensitiveMemory);
+}
+
+export function buildSafePrompt(
+  baseMessages: ChatMessage[],
+  externalContent: TaggedContent[],
+  options?: { allowSources?: string[]; stripTags?: string[] }
+): ChatMessage[] {
+  const sanitized = sanitizeTaggedContent(externalContent, options);
+  if (sanitized.length === 0) {
+    return baseMessages;
+  }
+  const combined = sanitized.map((entry) => `[${entry.source ?? "external"}] ${entry.content}`);
+  return [
+    ...baseMessages,
+    {
+      role: "system",
+      content: `External context:\n${combined.join("\n")}`
+    }
+  ];
 }
