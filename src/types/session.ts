@@ -6,6 +6,7 @@ export type Session = {
   chainId: number;
   createdAt: number;
   updatedAt: number;
+  sessionKey?: string;
 };
 
 export type SessionSummary = {

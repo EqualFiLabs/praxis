@@ -3,6 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 
 import { getAgentBasePath } from "../config/loader";
+import type { SessionKey } from "./identity";
 import type { Session, SessionSummary, SessionsFile } from "../types/session";
 import { SessionsFileSchema } from "../types/session";
 
@@ -33,16 +34,20 @@ function newSessionId(): string {
   return crypto.randomUUID();
 }
 
-export async function getOrCreateSession(agentId: string): Promise<Session> {
+export async function getOrCreateSession(
+  agentId: string,
+  sessionKey: SessionKey = "main"
+): Promise<Session> {
   const sessions = await loadSessionsFile(agentId);
-  const existing = sessions.main;
+  const existing = sessions[sessionKey];
   if (existing) {
     return {
       sessionId: existing.sessionId,
       agentId: existing.agentId,
       chainId: existing.lastChain,
       createdAt: existing.updatedAt,
-      updatedAt: existing.updatedAt
+      updatedAt: existing.updatedAt,
+      sessionKey
     };
   }
 
@@ -53,9 +58,10 @@ export async function getOrCreateSession(agentId: string): Promise<Session> {
     agentId,
     chainId: 0,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    sessionKey
   };
-  sessions.main = {
+  sessions[sessionKey] = {
     sessionId,
     agentId,
     updatedAt: now,
@@ -65,16 +71,17 @@ export async function getOrCreateSession(agentId: string): Promise<Session> {
   return session;
 }
 
-export async function updateSession(session: Session): Promise<void> {
+export async function updateSession(session: Session & { sessionKey?: SessionKey }): Promise<void> {
   const sessions = await loadSessionsFile(session.agentId);
   const now = Date.now();
-  const existing = sessions.main ?? {
+  const key = session.sessionKey ?? "main";
+  const existing = sessions[key] ?? {
     sessionId: session.sessionId,
     agentId: session.agentId,
     updatedAt: now,
     lastChain: session.chainId
   };
-  sessions.main = {
+  sessions[key] = {
     ...existing,
     sessionId: session.sessionId,
     agentId: session.agentId,
