@@ -292,6 +292,35 @@ The current CLI is a minimal MVP: it validates config/provider availability and 
 
 ---
 
+## 7.3) Live runtime daemon (channels + scheduler)
+
+The live runtime daemon runs channels + scheduler + agent loop in one process.
+
+```bash
+node ./dist/cli/runtime.js --agent AGENT_ID
+```
+
+Optional: change scheduler interval (default 60s):
+
+```bash
+node ./dist/cli/runtime.js --agent AGENT_ID --interval 30000
+```
+
+TypeScript (dev):
+
+```bash
+node --loader ts-node/esm src/cli/runtime.ts --agent AGENT_ID
+```
+
+Live mode config flags (examples):
+- `channels.*.enabled: true` to enable inbound/outbound per channel.
+- `channels.*.allowFrom` to restrict who can trigger the agent.
+- `channels.*.requireMentionInGroups` to enforce mention gating in group chats.
+- `inference.privacy.allowExternal` to allow fallback external providers.
+- `chain.genericExecModule` for external contract targets.
+
+---
+
 ## 7.1) Check channel status (optional)
 
 ```bash
@@ -348,9 +377,63 @@ node --loader ts-node/esm src/cli/whatsapp-webhook.ts --agent AGENT_ID
 
 ---
 
+## Checklist
+
+- Provider running (Ollama or external API reachable).
+- RPC configured and reachable (chain RPC URL works).
+- Owner key env var set and funded for gas.
+- TBA address + Position NFT configured.
+- Required ERC-6900 modules installed (selectors visible via view).
+- Channels validated (if enabled):
+  - `node ./dist/cli/channel-status.js --agent AGENT_ID`
+
+---
+
+## Smoke tests
+
+### Dry run (simulation-style)
+
+Goal: run a plan through validation and execution in a safe environment.
+
+1) Use a testnet RPC and a testnet TBA with installed modules.
+2) Set `chain.rpcUrl` to a testnet endpoint and `chain.chainId` accordingly.
+3) Ensure the owner key is funded on testnet.
+4) Run a single prompt in CLI:
+
+```bash
+node ./dist/cli/index.js --agent AGENT_ID --input "Simulate a rebalance on pool-1"
+```
+
+Expected:
+- A plan is generated.
+- Validation succeeds (selectors + constraints).
+- Execution submits a tx (or is blocked with clear errors).
+
+### Live run (mainnet or production)
+
+1) Switch RPC + chainId to production values.
+2) Confirm `chain.genericExecModule` (if external targets are needed).
+3) Start the live runtime:
+
+```bash
+node ./dist/cli/runtime.js --agent AGENT_ID
+```
+
+4) Trigger via channel or CLI:
+
+```bash
+node ./dist/cli/index.js --agent AGENT_ID --input "Roll yield on pool-1"
+```
+
+Expected:
+- Transaction is submitted.
+- `logs/` includes the tx hash and transcript entries.
+
+---
+
 ## Safety notes
 
-- This is an MVP. Always test on testnet first.
+- This is an MVP and unaudited. If you deside to use always test on testnet first.
 - Keep your private key secure.
 - Only install trusted ERC-6900 modules.
 
@@ -358,6 +441,7 @@ node --loader ts-node/esm src/cli/whatsapp-webhook.ts --agent AGENT_ID
 
 ## Roadmap ideas
 
+- Better key handling obviosuly using a PK in env is not ideal but this was chosen for velocity to validate the system first
 - `praxis install-skill` helper
 - Full inference planning (LLM-driven plans)
 - UI/UX for module installation and constraints
