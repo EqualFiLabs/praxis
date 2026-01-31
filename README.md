@@ -132,6 +132,94 @@ channels:
 
 ---
 
+## 3.1) Optional: Channels (Telegram / Discord / WhatsApp)
+
+Channels are optional. If enabled, Praxis can receive inbound messages and send replies.
+All channels are allowlist-first by default. Only senders in `allowFrom` can trigger the agent.
+
+### Telegram setup (polling or webhook)
+
+1) Create a bot with **@BotFather** and copy the token.
+2) Export the token:
+
+```bash
+export TELEGRAM_BOT_TOKEN=YOUR_TOKEN
+```
+
+3) Enable Telegram in config (polling example):
+
+```yaml
+channels:
+  telegram:
+    enabled: true
+    botTokenEnv: "TELEGRAM_BOT_TOKEN"
+    polling: true
+    allowFrom:
+      - "123456789"   # your Telegram user id
+```
+
+Notes:
+- Webhook support is available via `src/cli/telegram-webhook-runner.ts`.
+- Default path is `/telegram/webhook` on port `8080` (configurable).
+- You can require mentions in groups with `requireMentionInGroups: true` and `mentionPatterns`.
+
+### Discord setup (Gateway + REST)
+
+1) Create a bot in the **Discord Developer Portal**.
+2) Enable intents: **Server Members**, **Message Content**, **Direct Messages**.
+3) Export the bot token:
+
+```bash
+export DISCORD_BOT_TOKEN=YOUR_TOKEN
+```
+
+4) Enable Discord in config:
+
+```yaml
+channels:
+  discord:
+    enabled: true
+    botTokenEnv: "DISCORD_BOT_TOKEN"
+    allowFrom:
+      - "123456789012345678"   # your Discord user id
+```
+
+Optional (slash command interactions):
+```yaml
+channels:
+  discord:
+    publicKeyEnv: "DISCORD_PUBLIC_KEY"
+```
+
+### WhatsApp Cloud API setup (recommended)
+
+1) Create a Meta app and enable **WhatsApp Cloud API**.
+2) Get your **phone_number_id** and access token.
+3) Export the token:
+
+```bash
+export WHATSAPP_ACCESS_TOKEN=YOUR_TOKEN
+```
+
+4) Enable WhatsApp in config (Cloud API uses phone_number_id as sessionDir):
+
+```yaml
+channels:
+  whatsapp:
+    enabled: true
+    provider: "cloud"
+    sessionDir: "YOUR_PHONE_NUMBER_ID"
+    allowFrom:
+      - "+15550001111"   # your phone number in E.164
+```
+
+Optional webhook signature verification:
+```bash
+export WHATSAPP_APP_SECRET=YOUR_APP_SECRET
+```
+
+---
+
 ## 4) Set your owner key (required)
 
 You must set the owner private key in your shell before running. This key should control the Position NFT owner.
@@ -205,6 +293,14 @@ node --loader ts-node/esm src/cli/index.ts --agent AGENT_ID --input "Roll yield 
 The current CLI is a minimal MVP: it validates config/provider availability and runs a basic loop.
 
 ---
+
+## 7.1) Check channel status (optional)
+
+```bash
+node ./dist/cli/channel-status.js --agent AGENT_ID
+```
+
+This reports missing tokens or disabled channels.
 
 ## 8) Where data is stored
 
