@@ -153,6 +153,13 @@ export type AgentConfig = {
       >;
     };
   };
+  retention?: {
+    transcriptsDays?: number;
+    decisionsDays?: number;
+    logsDays?: number;
+    telemetryDays?: number;
+    memorySnapshotsDays?: number;
+  };
   inference: InferenceConfig;
   providers: {
     ollama?: ProviderConfig;
@@ -367,6 +374,15 @@ export const AgentConfigSchema = z.object({
             .optional()
         })
         .optional()
+    })
+    .optional(),
+  retention: z
+    .object({
+      transcriptsDays: z.number().int().positive().optional(),
+      decisionsDays: z.number().int().positive().optional(),
+      logsDays: z.number().int().positive().optional(),
+      telemetryDays: z.number().int().positive().optional(),
+      memorySnapshotsDays: z.number().int().positive().optional()
     })
     .optional(),
   inference: InferenceConfigSchema,
