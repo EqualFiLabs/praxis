@@ -1,7 +1,9 @@
+<p align="center">
 <img
 src="./praxis.png"
 alt="diagram"
-style="display:block;margin:0 auto;width:450px;">
+style="display:block;margin:0 auto;width:500px;">
+</p>
 
 # Praxis
 
