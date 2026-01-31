@@ -1,5 +1,6 @@
 import type { ChatMessage } from "../manager";
 import type { ProviderConfig } from "../../types/config";
+import { ProviderError } from "../../errors";
 
 export type ExternalAdapter = "anthropic" | "google";
 
@@ -25,11 +26,11 @@ function resolveExternalConfig(
   }
 
   if (!apiKeyEnv) {
-    throw new Error("Missing API key environment variable");
+    throw new ProviderError("Missing API key environment variable");
   }
   const apiKey = process.env[apiKeyEnv];
   if (!apiKey) {
-    throw new Error(`Missing API key value for ${apiKeyEnv}`);
+    throw new ProviderError(`Missing API key value for ${apiKeyEnv}`);
   }
 
   return { baseUrl, apiKey, model };
@@ -71,7 +72,7 @@ export async function chatExternal(
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`External inference error: ${res.status} ${text}`);
+    throw new ProviderError(`External inference error: ${res.status} ${text}`);
   }
 
   const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };

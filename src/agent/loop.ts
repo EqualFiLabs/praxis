@@ -8,6 +8,7 @@ import { requireSelectorAllowed, requireGenericExecForExternalTarget } from "../
 import type { ActionPolicy, PolicyContext } from "../policies/actions";
 import { evaluatePolicy } from "../policies/actions";
 import type { TelemetryLogger } from "../telemetry/events";
+import { classifyError } from "../errors";
 
 export type AgentInput = {
   type: "prompt" | "trigger";
@@ -257,20 +258,35 @@ export function createAgentLoop(deps: AgentLoopDeps): AgentLoop {
   };
 
   const intake = async (input: AgentInput): Promise<AgentReport> => {
-    const context = await assembleContext();
-    const actionPlan = await plan(context, input);
-    const validation = await validate(actionPlan, input);
-    if (!validation.valid) {
+    try {
+      const context = await assembleContext();
+      const actionPlan = await plan(context, input);
+      const validation = await validate(actionPlan, input);
+      if (!validation.valid) {
+        await deps.appendTranscript({
+          type: "error",
+          text: validation.errors.join("; "),
+          timestamp: Date.now()
+        });
+        return { summary: "Validation failed", success: false, actions: [] };
+      }
+      const execution = await execute(actionPlan, input);
+      await persist(execution, actionPlan, input);
+      return report(execution);
+    } catch (err) {
+      const classified = classifyError(err);
       await deps.appendTranscript({
         type: "error",
-        text: validation.errors.join("; "),
-        timestamp: Date.now()
+        text: `[${classified.category}] ${classified.message}`,
+        timestamp: Date.now(),
+        metadata: { category: classified.category }
       });
-      return { summary: "Validation failed", success: false, actions: [] };
+      return {
+        summary: `${classified.category} error`,
+        success: false,
+        actions: []
+      };
     }
-    const execution = await execute(actionPlan, input);
-    await persist(execution, actionPlan, input);
-    return report(execution);
   };
 
   return {

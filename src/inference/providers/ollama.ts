@@ -1,5 +1,6 @@
 import type { ChatMessage } from "../manager";
 import type { ProviderConfig } from "../../types/config";
+import { ProviderError } from "../../errors";
 
 export type ChatResponse = {
   content: string;
@@ -39,7 +40,7 @@ export async function chatOllama(
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Ollama error: ${res.status} ${text}`);
+    throw new ProviderError(`Ollama error: ${res.status} ${text}`);
   }
 
   const json = (await res.json()) as { message?: { content?: string } };
