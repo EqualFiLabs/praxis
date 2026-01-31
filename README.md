@@ -2,8 +2,6 @@
 
 Local-first Position Agent runtime for Equalis. This tool runs on your machine, uses Ollama by default for inference, stores memory locally, and calls your Position NFT TBA through ERC-6551 + ERC-6900.
 
-This README is written for non-technical users and is intentionally step-by-step.
-
 ---
 
 ## What this does
