@@ -39,16 +39,56 @@ export type ChannelsConfig = {
     polling?: boolean;
     apiBaseUrl?: string;
     allowFrom?: string[];
+    accounts?: Record<
+      string,
+      {
+        enabled?: boolean;
+        botTokenEnv: string;
+        webhookUrl?: string;
+        polling?: boolean;
+        apiBaseUrl?: string;
+        allowFrom?: string[];
+      }
+    >;
+    defaultAccountId?: string;
   };
   whatsapp?: {
     enabled: boolean;
     sessionDir: string;
+    provider?: "cloud" | "web";
+    apiBaseUrl?: string;
     allowFrom?: string[];
+    accounts?: Record<
+      string,
+      {
+        enabled?: boolean;
+        sessionDir: string;
+        provider?: "cloud" | "web";
+        apiBaseUrl?: string;
+        allowFrom?: string[];
+      }
+    >;
+    defaultAccountId?: string;
   };
   discord?: {
     enabled: boolean;
     botTokenEnv: string;
+    appId?: string;
+    publicKeyEnv?: string;
+    apiBaseUrl?: string;
     allowFrom?: string[];
+    accounts?: Record<
+      string,
+      {
+        enabled?: boolean;
+        botTokenEnv: string;
+        appId?: string;
+        publicKeyEnv?: string;
+        apiBaseUrl?: string;
+        allowFrom?: string[];
+      }
+    >;
+    defaultAccountId?: string;
   };
 };
 
@@ -115,21 +155,64 @@ export const ChannelsConfigSchema = z
         webhookUrl: z.string().min(1).optional(),
         polling: z.boolean().optional(),
         apiBaseUrl: z.string().min(1).optional(),
-        allowFrom: z.array(z.string()).optional()
+        allowFrom: z.array(z.string()).optional(),
+        accounts: z
+          .record(
+            z.object({
+              enabled: z.boolean().optional(),
+              botTokenEnv: z.string().min(1),
+              webhookUrl: z.string().min(1).optional(),
+              polling: z.boolean().optional(),
+              apiBaseUrl: z.string().min(1).optional(),
+              allowFrom: z.array(z.string()).optional()
+            })
+          )
+          .optional(),
+        defaultAccountId: z.string().min(1).optional()
       })
       .optional(),
     whatsapp: z
       .object({
         enabled: z.boolean(),
         sessionDir: z.string().min(1),
-        allowFrom: z.array(z.string()).optional()
+        provider: z.enum(["cloud", "web"]).optional(),
+        apiBaseUrl: z.string().min(1).optional(),
+        allowFrom: z.array(z.string()).optional(),
+        accounts: z
+          .record(
+            z.object({
+              enabled: z.boolean().optional(),
+              sessionDir: z.string().min(1),
+              provider: z.enum(["cloud", "web"]).optional(),
+              apiBaseUrl: z.string().min(1).optional(),
+              allowFrom: z.array(z.string()).optional()
+            })
+          )
+          .optional(),
+        defaultAccountId: z.string().min(1).optional()
       })
       .optional(),
     discord: z
       .object({
         enabled: z.boolean(),
         botTokenEnv: z.string().min(1),
-        allowFrom: z.array(z.string()).optional()
+        appId: z.string().min(1).optional(),
+        publicKeyEnv: z.string().min(1).optional(),
+        apiBaseUrl: z.string().min(1).optional(),
+        allowFrom: z.array(z.string()).optional(),
+        accounts: z
+          .record(
+            z.object({
+              enabled: z.boolean().optional(),
+              botTokenEnv: z.string().min(1),
+              appId: z.string().min(1).optional(),
+              publicKeyEnv: z.string().min(1).optional(),
+              apiBaseUrl: z.string().min(1).optional(),
+              allowFrom: z.array(z.string()).optional()
+            })
+          )
+          .optional(),
+        defaultAccountId: z.string().min(1).optional()
       })
       .optional()
   })
