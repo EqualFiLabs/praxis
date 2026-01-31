@@ -1,4 +1,5 @@
 import { loadConfig } from "../config/loader";
+import { normalizeConfig } from "../config/normalized";
 import { createAgentLoop } from "../agent/loop";
 import { loadMemory, saveMemory, appendDecision } from "../memory/store";
 import { loadConstraints } from "../constraints/checker";
@@ -36,7 +37,7 @@ function redactSecrets(text: string): string {
 
 async function main() {
   const { agentId, port, path } = parseArgs(process.argv);
-  const config = await loadConfig(agentId);
+  const config = normalizeConfig(await loadConfig(agentId));
   if (!config.channels?.telegram) {
     throw new Error("telegram channel not configured");
   }

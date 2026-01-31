@@ -1,4 +1,5 @@
 import { loadConfig } from "../config/loader";
+import { normalizeConfig } from "../config/normalized";
 import { createAgentLoop } from "../agent/loop";
 import { loadMemory, saveMemory, appendDecision } from "../memory/store";
 import { loadConstraints } from "../constraints/checker";
@@ -27,7 +28,7 @@ function redactSecrets(text: string): string {
 
 async function main() {
   const { agentId, input } = parseArgs(process.argv);
-  const config = await loadConfig(agentId);
+  const config = normalizeConfig(await loadConfig(agentId));
   // Startup validation: probe inference providers and fail fast.
   await selectProviderWithProbe({ inference: config.inference, providers: config.providers });
 

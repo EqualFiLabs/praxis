@@ -1,4 +1,5 @@
 import { loadConfig } from "../config/loader";
+import { normalizeConfig } from "../config/normalized";
 import { probeChannels } from "../channels/status";
 
 function parseArgs(argv: string[]): string {
@@ -16,7 +17,7 @@ function parseArgs(argv: string[]): string {
 
 async function main() {
   const agentId = parseArgs(process.argv);
-  const config = await loadConfig(agentId);
+  const config = normalizeConfig(await loadConfig(agentId));
   const status = probeChannels(config);
   process.stdout.write(JSON.stringify(status, null, 2));
 }
