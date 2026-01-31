@@ -4,6 +4,43 @@ import type {
   InboundMessageHandler,
   OutboundMessage,
 } from "./types";
+import type { ChannelCapabilities } from "./dock";
+
+export type ChannelMeta = {
+  id: ChannelId;
+  label: string;
+  docsPath: string;
+  capabilities: ChannelCapabilities;
+};
+
+export const CHANNEL_METADATA: Record<string, ChannelMeta> = {
+  telegram: {
+    id: "telegram",
+    label: "Telegram",
+    docsPath: "/channels/telegram",
+    capabilities: { chatTypes: ["dm", "group", "thread"], threads: true, textChunkLimit: 4000 }
+  },
+  discord: {
+    id: "discord",
+    label: "Discord",
+    docsPath: "/channels/discord",
+    capabilities: { chatTypes: ["dm", "group", "thread"], threads: true, textChunkLimit: 2000 }
+  },
+  whatsapp: {
+    id: "whatsapp",
+    label: "WhatsApp",
+    docsPath: "/channels/whatsapp",
+    capabilities: { chatTypes: ["dm", "group"], polls: true, reactions: true, media: true, textChunkLimit: 4000 }
+  }
+};
+
+export function listChannelMetadata(): ChannelMeta[] {
+  return Object.values(CHANNEL_METADATA);
+}
+
+export function getChannelMetadata(channelId: ChannelId): ChannelMeta | undefined {
+  return CHANNEL_METADATA[String(channelId)];
+}
 
 export class ChannelRegistry {
   private clients = new Map<ChannelId, ChannelClient>();
