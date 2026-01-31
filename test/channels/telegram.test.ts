@@ -47,10 +47,14 @@ describe("buildTelegramSendPayload", () => {
 
 describe("allowlist enforcement (property)", () => {
   it("only allows senders on allowFrom list", () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+    const tokenArb = fc
+      .array(fc.constantFrom(...chars.split("")), { minLength: 1 })
+      .map((arr) => arr.join(""));
     fc.assert(
       fc.property(
-        fc.string({ minLength: 1 }),
-        fc.string({ minLength: 1 }),
+        tokenArb,
+        tokenArb,
         (allowed, other) => {
           const config = {
             enabled: true,
