@@ -1,4 +1,4 @@
-import type { AgentLoop } from "../agent/loop";
+import type { AgentLoop, AgentReport } from "../agent/loop";
 import type { ChannelRegistry } from "./registry";
 import type { ChannelEvent, ChannelId, MsgContext, OutboundMessage } from "./types";
 import type { ChannelPlugin } from "./plugins/types";
@@ -17,6 +17,7 @@ export type ChannelRuntimeOptions = {
   plugins?: Record<string, ChannelPlugin>;
   enabledChannels?: Record<string, boolean>;
   onEvent?: (event: ChannelEvent) => void;
+  formatReport?: (report: AgentReport, origin: MsgContext) => OutboundMessage | null;
 };
 
 export class ChannelRuntimeManager {
@@ -25,6 +26,7 @@ export class ChannelRuntimeManager {
   private readonly plugins: Record<string, ChannelPlugin>;
   private readonly enabledChannels: Record<string, boolean>;
   private readonly onEvent?: (event: ChannelEvent) => void;
+  private readonly formatReport?: (report: AgentReport, origin: MsgContext) => OutboundMessage | null;
 
   constructor(options: ChannelRuntimeOptions) {
     this.registry = options.registry;
@@ -32,6 +34,7 @@ export class ChannelRuntimeManager {
     this.plugins = options.plugins ?? {};
     this.enabledChannels = options.enabledChannels ?? {};
     this.onEvent = options.onEvent;
+    this.formatReport = options.formatReport;
   }
 
   async start(): Promise<void> {
@@ -65,11 +68,17 @@ export class ChannelRuntimeManager {
       metadata: message.metadata
     });
     try {
-      await this.agentLoop.intake({
+      const report = await this.agentLoop.intake({
         type: "prompt",
         text: message.content,
         sessionId
       });
+      if (this.formatReport) {
+        const outbound = this.formatReport(report, message);
+        if (outbound) {
+          await this.routeOutbound(outbound, message);
+        }
+      }
     } catch (error) {
       this.emitEvent("error", message.channelId, {
         direction: "inbound",
