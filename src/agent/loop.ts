@@ -5,11 +5,16 @@ import type { Constraint, Memory } from "../types/memory";
 import type { TranscriptEntry } from "../types/session";
 import { checkPlan, type ConstraintResult } from "../constraints/checker";
 import { requireSelectorAllowed, requireGenericExecForExternalTarget } from "../chain/selector-validation";
+import type { ActionPolicy, PolicyContext } from "../policies/actions";
+import { evaluatePolicy } from "../policies/actions";
 
 export type AgentInput = {
   type: "prompt" | "trigger";
   text?: string;
   sessionId?: string;
+  userId?: string;
+  channelId?: string;
+  chatType?: "dm" | "group" | "thread";
 };
 
 export type AgentContext = {
@@ -63,13 +68,14 @@ export type AgentLoopDeps = {
     outcome?: string;
     txHash?: string;
   }) => Promise<void>;
+  getActionPolicy?: () => ActionPolicy | undefined;
 };
 
 export type AgentLoop = {
   intake: (input: AgentInput) => Promise<AgentReport>;
   assembleContext: () => Promise<AgentContext>;
   plan: (context: AgentContext, input: AgentInput) => Promise<ActionPlan>;
-  validate: (plan: ActionPlan) => Promise<ValidationResult>;
+  validate: (plan: ActionPlan, input: AgentInput) => Promise<ValidationResult>;
   execute: (plan: ActionPlan) => Promise<ExecutionResult>;
   persist: (result: ExecutionResult, plan: ActionPlan) => Promise<void>;
   report: (result: ExecutionResult) => AgentReport;
@@ -90,15 +96,30 @@ export function createAgentLoop(deps: AgentLoopDeps): AgentLoop {
     return deps.inferPlan(context, input);
   };
 
-  const validate = async (actionPlan: ActionPlan): Promise<ValidationResult> => {
+  const validate = async (actionPlan: ActionPlan, input: AgentInput): Promise<ValidationResult> => {
     const errors: string[] = [];
     const warnings: string[] = [];
+    const policyContext: PolicyContext = {
+      agentId: deps.agentId,
+      userId: input.userId,
+      channelId: input.channelId,
+      chatType: input.chatType,
+      sessionId: input.sessionId
+    };
+    const actionPolicy = deps.getActionPolicy?.();
 
     const allowedSelectors = await deps.allowedSelectors();
     const hasGenericExec = await deps.hasGenericExec();
 
     for (const action of actionPlan.actions) {
       try {
+        if (actionPolicy) {
+          const decision = evaluatePolicy(action.selector, policyContext, actionPolicy);
+          if (!decision.allowed) {
+            errors.push(`action policy denied selector ${action.selector}`);
+            continue;
+          }
+        }
         requireSelectorAllowed(allowedSelectors, action.selector);
         requireGenericExecForExternalTarget({
           tbaAddress: deps.tbaAddress as `0x${string}`,
@@ -189,7 +210,7 @@ export function createAgentLoop(deps: AgentLoopDeps): AgentLoop {
   const intake = async (input: AgentInput): Promise<AgentReport> => {
     const context = await assembleContext();
     const actionPlan = await plan(context, input);
-    const validation = await validate(actionPlan);
+    const validation = await validate(actionPlan, input);
     if (!validation.valid) {
       await deps.appendTranscript({
         type: "error",

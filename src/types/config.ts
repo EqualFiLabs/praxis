@@ -124,6 +124,35 @@ export type AgentConfig = {
   auth: {
     ownerKeyEnv: string;
   };
+  policies?: {
+    actions?: {
+      global?: {
+        allow?: string[];
+        deny?: string[];
+        defaultAction?: "allow" | "deny";
+      };
+      agents?: Record<
+        string,
+        { allow?: string[]; deny?: string[]; defaultAction?: "allow" | "deny" }
+      >;
+      channels?: Record<
+        string,
+        { allow?: string[]; deny?: string[]; defaultAction?: "allow" | "deny" }
+      >;
+      users?: Record<
+        string,
+        { allow?: string[]; deny?: string[]; defaultAction?: "allow" | "deny" }
+      >;
+      sessions?: Record<
+        string,
+        { allow?: string[]; deny?: string[]; defaultAction?: "allow" | "deny" }
+      >;
+      chatTypes?: Record<
+        "dm" | "group" | "thread",
+        { allow?: string[]; deny?: string[]; defaultAction?: "allow" | "deny" }
+      >;
+    };
+  };
   inference: InferenceConfig;
   providers: {
     ollama?: ProviderConfig;
@@ -280,6 +309,66 @@ export const AgentConfigSchema = z.object({
   auth: z.object({
     ownerKeyEnv: z.string().min(1)
   }),
+  policies: z
+    .object({
+      actions: z
+        .object({
+          global: z
+            .object({
+              allow: z.array(z.string()).optional(),
+              deny: z.array(z.string()).optional(),
+              defaultAction: z.enum(["allow", "deny"]).optional()
+            })
+            .optional(),
+          agents: z
+            .record(
+              z.object({
+                allow: z.array(z.string()).optional(),
+                deny: z.array(z.string()).optional(),
+                defaultAction: z.enum(["allow", "deny"]).optional()
+              })
+            )
+            .optional(),
+          channels: z
+            .record(
+              z.object({
+                allow: z.array(z.string()).optional(),
+                deny: z.array(z.string()).optional(),
+                defaultAction: z.enum(["allow", "deny"]).optional()
+              })
+            )
+            .optional(),
+          users: z
+            .record(
+              z.object({
+                allow: z.array(z.string()).optional(),
+                deny: z.array(z.string()).optional(),
+                defaultAction: z.enum(["allow", "deny"]).optional()
+              })
+            )
+            .optional(),
+          sessions: z
+            .record(
+              z.object({
+                allow: z.array(z.string()).optional(),
+                deny: z.array(z.string()).optional(),
+                defaultAction: z.enum(["allow", "deny"]).optional()
+              })
+            )
+            .optional(),
+          chatTypes: z
+            .record(
+              z.object({
+                allow: z.array(z.string()).optional(),
+                deny: z.array(z.string()).optional(),
+                defaultAction: z.enum(["allow", "deny"]).optional()
+              })
+            )
+            .optional()
+        })
+        .optional()
+    })
+    .optional(),
   inference: InferenceConfigSchema,
   providers: z.object({
     ollama: ProviderConfigSchema.optional(),
