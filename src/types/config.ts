@@ -35,6 +35,9 @@ export type ChannelsConfig = {
   telegram?: {
     enabled: boolean;
     botTokenEnv: string;
+    webhookUrl?: string;
+    polling?: boolean;
+    apiBaseUrl?: string;
     allowFrom?: string[];
   };
   whatsapp?: {
@@ -109,6 +112,9 @@ export const ChannelsConfigSchema = z
       .object({
         enabled: z.boolean(),
         botTokenEnv: z.string().min(1),
+        webhookUrl: z.string().min(1).optional(),
+        polling: z.boolean().optional(),
+        apiBaseUrl: z.string().min(1).optional(),
         allowFrom: z.array(z.string()).optional()
       })
       .optional(),
