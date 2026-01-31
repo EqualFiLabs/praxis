@@ -1,0 +1,153 @@
+import { z } from "zod";
+
+export type ProviderType = "ollama" | "external";
+
+export type InferenceConfig = {
+  provider: ProviderType;
+  fallbackProvider?: string;
+  privacy: {
+    allowExternal: boolean;
+    allowSensitiveMemory: boolean;
+  };
+};
+
+export type ProviderAdapter = {
+  baseUrl: string;
+  apiKeyEnv: string;
+  model: string;
+};
+
+export type ProviderConfig = {
+  type: ProviderType;
+  baseUrl: string;
+  model: string;
+  contextWindow: number;
+  maxOutputTokens: number;
+  timeoutMs: number;
+  apiKeyEnv?: string;
+  adapters?: {
+    anthropic?: ProviderAdapter;
+    google?: ProviderAdapter;
+  };
+};
+
+export type ChannelsConfig = {
+  telegram?: {
+    enabled: boolean;
+    botTokenEnv: string;
+    allowFrom?: string[];
+  };
+  whatsapp?: {
+    enabled: boolean;
+    sessionDir: string;
+    allowFrom?: string[];
+  };
+  discord?: {
+    enabled: boolean;
+    botTokenEnv: string;
+    allowFrom?: string[];
+  };
+};
+
+export type AgentConfig = {
+  agent: {
+    id: string;
+    profile: string;
+  };
+  auth: {
+    ownerKeyEnv: string;
+  };
+  inference: InferenceConfig;
+  providers: {
+    ollama?: ProviderConfig;
+    external?: ProviderConfig;
+  };
+  chain: {
+    rpcUrl: string;
+    chainId: number;
+    tbaAddress: string;
+    positionNftAddress: string;
+    positionTokenId: string;
+  };
+  channels?: ChannelsConfig;
+};
+
+export const ProviderAdapterSchema = z.object({
+  baseUrl: z.string().min(1),
+  apiKeyEnv: z.string().min(1),
+  model: z.string().min(1)
+});
+
+export const ProviderConfigSchema = z.object({
+  type: z.enum(["ollama", "external"]),
+  baseUrl: z.string().min(1),
+  model: z.string().min(1),
+  contextWindow: z.number().int().positive(),
+  maxOutputTokens: z.number().int().positive(),
+  timeoutMs: z.number().int().positive(),
+  apiKeyEnv: z.string().optional(),
+  adapters: z
+    .object({
+      anthropic: ProviderAdapterSchema.optional(),
+      google: ProviderAdapterSchema.optional()
+    })
+    .optional()
+});
+
+export const InferenceConfigSchema = z.object({
+  provider: z.enum(["ollama", "external"]),
+  fallbackProvider: z.string().optional(),
+  privacy: z.object({
+    allowExternal: z.boolean(),
+    allowSensitiveMemory: z.boolean()
+  })
+});
+
+export const ChannelsConfigSchema = z
+  .object({
+    telegram: z
+      .object({
+        enabled: z.boolean(),
+        botTokenEnv: z.string().min(1),
+        allowFrom: z.array(z.string()).optional()
+      })
+      .optional(),
+    whatsapp: z
+      .object({
+        enabled: z.boolean(),
+        sessionDir: z.string().min(1),
+        allowFrom: z.array(z.string()).optional()
+      })
+      .optional(),
+    discord: z
+      .object({
+        enabled: z.boolean(),
+        botTokenEnv: z.string().min(1),
+        allowFrom: z.array(z.string()).optional()
+      })
+      .optional()
+  })
+  .optional();
+
+export const AgentConfigSchema = z.object({
+  agent: z.object({
+    id: z.string().min(1),
+    profile: z.string().min(1)
+  }),
+  auth: z.object({
+    ownerKeyEnv: z.string().min(1)
+  }),
+  inference: InferenceConfigSchema,
+  providers: z.object({
+    ollama: ProviderConfigSchema.optional(),
+    external: ProviderConfigSchema.optional()
+  }),
+  chain: z.object({
+    rpcUrl: z.string().min(1),
+    chainId: z.number().int().positive(),
+    tbaAddress: z.string().min(1),
+    positionNftAddress: z.string().min(1),
+    positionTokenId: z.string().min(1)
+  }),
+  channels: ChannelsConfigSchema
+});
